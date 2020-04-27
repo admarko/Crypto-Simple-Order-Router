@@ -19,6 +19,7 @@ class SmartOrderRouter:
     multiply_factor = 100000
 
     def __init__(self, symbol: str):
+        self.unmatched = True
         self.symbol = symbol
         self.conn: sql.Connection = self.create_db_connection("crypto_data.db")
 
@@ -109,6 +110,7 @@ class SmartOrderRouter:
         rows = cur.fetchall()
         for row in rows:
             print(row)
+            # print(row[1]*row[2], row[5])
         print("\n\n UPDATED DB!")
 
     def find_order(self):
@@ -117,13 +119,13 @@ class SmartOrderRouter:
             {"enableRateLimit": True, "options": {"fetchMinOrderAmounts": False}}
         )
 
-        while True:
+        while self.unmatched:
             self.clear_db(self.conn)
             coinbase_orderbook = self.fetch_data(coinbase, self.symbol)
             self.insert_coinbase_into_db(coinbase_orderbook, self.conn, self.symbol)
             kraken_orderbook = self.fetch_data(kraken, self.symbol)
             self.insert_kraken_into_db(kraken_orderbook, self.conn, self.symbol)
-            self.read_db(self.conn)
+            self.read_db(self.conn)  # DO SOME CHECK TO CHANGE unmatched
 
 
 if __name__ == "__main__":
@@ -131,11 +133,8 @@ if __name__ == "__main__":
     router = SmartOrderRouter(symbol)
 
 
-# buy - lowest ask
-# sell - highest bid
-
-# the following is psuedocode for step 6
-# def buy():
+# the following is psuedocode for orderbook matching algo
+# def match():
 # 	GROUP_BY asks
 # 	ORDER_BY price increasing
 # 	IF (avg_price < AVG_PRICE_LIMIT) AND (volume_purchased < VOLUME_LIMIT )
