@@ -58,11 +58,11 @@ class SmartOrderRouter:
         c = conn.cursor()
         c.execute("DELETE FROM orderbook;")
 
-    def fetch_data(
-        self,
-        exchange: Union[ccxt.kraken.kraken, ccxt.coinbasepro.coinbasepro],
-        symbol: str,
-    ) -> dict:
+    def fetch_data(self, exchange, symbol: str) -> dict:
+        """
+		ccxt is a wrapper library to go around many crypto exchanges
+		"""
+        # print(type(exchange) is ccxt.kraken.kraken)
         return exchange.fetch_order_book(symbol)
 
     def insert_row_into_db(
@@ -113,17 +113,30 @@ class SmartOrderRouter:
 
     def find_order(self):
         coinbase = ccxt.coinbasepro()
-        kraken = ccxt.kraken()
+        kraken = ccxt.kraken(
+            {"enableRateLimit": True, "options": {"fetchMinOrderAmounts": False}}
+        )
 
         while True:
             self.clear_db(self.conn)
-            # coinbase_orderbook = self.fetch_data(coinbase, self.symbol)
-            # self.insert_coinbase_into_db(coinbase_orderbook, self.conn, self.symbol)
+            coinbase_orderbook = self.fetch_data(coinbase, self.symbol)
+            self.insert_coinbase_into_db(coinbase_orderbook, self.conn, self.symbol)
             kraken_orderbook = self.fetch_data(kraken, self.symbol)
-            # self.insert_kraken_into_db(kraken_orderbook, self.conn, self.symbol)
+            self.insert_kraken_into_db(kraken_orderbook, self.conn, self.symbol)
             self.read_db(self.conn)
 
 
 if __name__ == "__main__":
     symbol = "BTC/USD"  # get symbol from user - check it exists
     router = SmartOrderRouter(symbol)
+
+
+# buy - lowest ask
+# sell - highest bid
+
+# the following is psuedocode for step 6
+# def buy():
+# 	GROUP_BY asks
+# 	ORDER_BY price increasing
+# 	IF (avg_price < AVG_PRICE_LIMIT) AND (volume_purchased < VOLUME_LIMIT )
+# 	make_purchase()
