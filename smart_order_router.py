@@ -89,7 +89,7 @@ class SmartOrderRouter:
             self.insert_row_into_db(row, conn)
 
     def insert_kraken_into_db(
-        orderbook: dict, conn: sql.Connection, symbol: str
+        self, orderbook: dict, conn: sql.Connection, symbol: str
     ) -> None:
         for ask in orderbook["asks"]:
             price = ask[0] * self.multiply_factor
